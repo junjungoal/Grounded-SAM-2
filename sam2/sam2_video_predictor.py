@@ -44,6 +44,7 @@ class SAM2VideoPredictor(SAM2Base):
     def init_state(
         self,
         video_path=None,
+        images=None,
         offload_video_to_cpu=False,
         offload_state_to_cpu=False,
         async_loading_frames=False,
@@ -51,8 +52,19 @@ class SAM2VideoPredictor(SAM2Base):
         """Initialize an inference state."""
         compute_device = self.device  # device of the model
         inference_state = {}
-        if video_path is not None:
+        if images is not None:
             # Preload video frames from file
+            video_height, video_width = images.shape[2:]
+            # images, video_height, video_width = load_video_frames(
+            #     video_path=video_path,
+            #     image_size=self.image_size,
+            #     offload_video_to_cpu=offload_video_to_cpu,
+            #     async_loading_frames=async_loading_frames,
+            #     compute_device=compute_device,
+            # )
+            inference_state["images"] = images
+            inference_state["num_frames"] = len(images)
+        elif video_path is not None:
             images, video_height, video_width = load_video_frames(
                 video_path=video_path,
                 image_size=self.image_size,
@@ -117,7 +129,7 @@ class SAM2VideoPredictor(SAM2Base):
         inference_state["tracking_has_started"] = False
         inference_state["frames_already_tracked"] = {}
         # Warm up the visual backbone and cache the image feature on frame 0
-        if video_path is not None:
+        if images is not None:
             self._get_image_feature(inference_state, frame_idx=0, batch_size=1)
 
         return inference_state
